@@ -17,14 +17,17 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.talend.utils.string.StringUtilities;
@@ -40,7 +43,7 @@ public final class FileUtils {
 
     private FileUtils() {
     }
-    
+
     public static synchronized void replaceInFile(String path, String oldString, String newString) throws IOException,
             URISyntaxException {
         File file = new File(path);
@@ -50,10 +53,9 @@ public final class FileUtils {
         BufferedInputStream bis = null;
         DataInputStream dis = null;
 
-            fis = new FileInputStream(file);
+        fis = new FileInputStream(file);
         bis = new BufferedInputStream(fis);
         dis = new DataInputStream(bis);
-
 
         OutputStream tempOutputStream = new FileOutputStream(tmpFile);
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(tempOutputStream, "UTF8"));
@@ -66,7 +68,7 @@ public final class FileUtils {
         while (((len = dis.read(buf2))) != -1) {
             line = new String(buf2, 0, len);
             newLine = line.replace(oldString, newString);
-            newLine = new String((newLine).getBytes(), "UTF8");//$NON-NLS-1$//$NON-NLS-2$
+            newLine = new String((newLine).getBytes(), "UTF8");//$NON-NLS-1$
             bufferedWriter.write(newLine);
             bufferedWriter.flush();
         }
@@ -86,8 +88,7 @@ public final class FileUtils {
      * @throws IOException
      * @throws URISyntaxException
      */
-    public static synchronized List<ReturnCode> checkBracketsInFile(String path) throws IOException,
-            URISyntaxException {
+    public static synchronized List<ReturnCode> checkBracketsInFile(String path) throws IOException, URISyntaxException {
         List<ReturnCode> returncodes = new ArrayList<ReturnCode>();
         File file = new File(path);
         BufferedReader in = new BufferedReader(new FileReader(file));
@@ -108,4 +109,28 @@ public final class FileUtils {
         return returncodes;
     }
 
+    public static void getAllFilesFromFolder(File aFolder, List<File> fileList, FilenameFilter filenameFilter) {
+        File[] folderFiles = aFolder.listFiles(filenameFilter);
+        if (fileList != null && folderFiles != null) {
+            Collections.addAll(fileList, folderFiles);
+        }
+        File[] allFolders = aFolder.listFiles(new FileFilter() {
+
+            @Override
+            public boolean accept(File arg0) {
+                return arg0.isDirectory();
+            }
+        });
+        if (allFolders != null) {
+            for (File folder : allFolders) {
+                getAllFilesFromFolder(folder, fileList, filenameFilter);
+            }
+        }
+    }
+
+    public static List<File> getAllFilesFromFolder(File aFolder, FilenameFilter filenameFilter) {
+        List<File> files = new ArrayList<File>();
+        getAllFilesFromFolder(aFolder, files, filenameFilter);
+        return files;
+    }
 }

@@ -100,6 +100,10 @@ public interface TalendMavenConstants {
 
     static final String PROFILE_INCLUDE_PIGUDFS_BINARIES = "include-pigudfs-binaries";
 
+    static final String PROFILE_PACKAGING_ONLY = "packaging-only";
+
+    static final String PROFILE_PACKAGING_AND_ASSEMBLY = "packaging-and-assembly";
+
     /**
      * argments
      */

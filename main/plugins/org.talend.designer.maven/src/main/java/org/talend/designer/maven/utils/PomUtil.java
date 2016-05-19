@@ -272,17 +272,6 @@ public class PomUtil {
             return true;
         }
         return false;
-        // boolean unavailable = true;
-        // if (artifact != null) {
-        // try {
-        // // only check local repository. the set the remote repositories null.
-        // unavailable = MavenPlugin.getMaven().isUnavailable(artifact.getGroupId(), artifact.getArtifactId(),
-        // artifact.getVersion(), artifact.getType(), artifact.getClassifier(), null);
-        // } catch (CoreException e) {
-        // ExceptionHandler.process(e);
-        // }
-        // }
-        // return !unavailable;
     }
 
     /**
