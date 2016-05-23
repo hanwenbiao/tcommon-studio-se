@@ -14,7 +14,6 @@ package org.talend.librariesmanager.utils;
 
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,6 @@ import org.talend.core.ILibraryManagerService;
 import org.talend.core.model.general.ModuleNeeded.ELibraryInstallStatus;
 import org.talend.core.model.general.ModuleStatusProvider;
 import org.talend.core.model.general.ModuleToInstall;
-import org.talend.core.runtime.maven.MavenUrlHelper;
 import org.talend.librariesmanager.ui.LibManagerUiPlugin;
 import org.talend.librariesmanager.ui.i18n.Messages;
 import org.talend.librariesmanager.ui.wizards.AcceptModuleLicensesWizard;
@@ -82,7 +80,6 @@ abstract public class DownloadModuleRunnable implements IRunnableWithProgress {
                         monitor,
                         Messages.getString("ExternalModulesInstallDialog.downloading2") + " (" + toDownload.size() + ")", toDownload.size()); //$NON-NLS-1$
 
-        Map<String, String> customUriToAdd = new HashMap<String, String>();
         // TUP-3135 : stop to try to download at the first timeout.
         boolean connectionTimeOut = false;
         for (final ModuleToInstall module : toDownload) {
@@ -104,19 +101,16 @@ abstract public class DownloadModuleRunnable implements IRunnableWithProgress {
                             downloader.download(new URL(null, mvnUri, new Handler()), null, subMonitor.newChild(1));
                             // update module status
                             final Map<String, ELibraryInstallStatus> statusMap = ModuleStatusProvider.getStatusMap();
-                            statusMap.put(MavenUrlHelper.generateSnapshotMavenUri(mvnUri), ELibraryInstallStatus.INSTALLED);
+                            statusMap.put(mvnUri, ELibraryInstallStatus.INSTALLED);
                         }
                     } else {
                         downloader.download(new URL(null, module.getMavenUri(), new Handler()), null, subMonitor.newChild(1));
                         // update module status
                         final Map<String, ELibraryInstallStatus> statusMap = ModuleStatusProvider.getStatusMap();
-                        statusMap.put(MavenUrlHelper.generateSnapshotMavenUri(module.getMavenUri()),
-                                ELibraryInstallStatus.INSTALLED);
+                        statusMap.put(module.getMavenUri(), ELibraryInstallStatus.INSTALLED);
                     }
 
                     // deploy to index as snapshot
-                    String snapshotUri = MavenUrlHelper.generateSnapshotMavenUri(module.getMavenUri());
-                    customUriToAdd.put(module.getName(), snapshotUri);
                     installedModules.add(module.getName());
                 } catch (SocketTimeoutException e) {
                     downloadFailed.add(module.getName());
@@ -134,7 +128,7 @@ abstract public class DownloadModuleRunnable implements IRunnableWithProgress {
             }
         }
         // reset the module install status
-        if (!customUriToAdd.isEmpty()) {
+        if (!installedModules.isEmpty()) {
             ILibraryManagerService libraryManagerService = (ILibraryManagerService) GlobalServiceRegister.getDefault()
                     .getService(ILibraryManagerService.class);
             libraryManagerService.forceListUpdate();

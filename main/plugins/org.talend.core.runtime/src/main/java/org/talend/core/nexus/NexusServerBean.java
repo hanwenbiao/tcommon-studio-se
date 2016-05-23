@@ -28,7 +28,7 @@ public class NexusServerBean {
 
     boolean official;
 
-    String repositoryUrl;
+    String snapshotRepId;
 
     public NexusServerBean() {
     }
@@ -110,6 +110,24 @@ public class NexusServerBean {
     }
 
     /**
+     * Getter for snapshotRepId.
+     * 
+     * @return the snapshotRepId
+     */
+    public String getSnapshotRepId() {
+        return this.snapshotRepId;
+    }
+
+    /**
+     * Sets the snapshotRepId.
+     * 
+     * @param snapshotRepId the snapshotRepId to set
+     */
+    public void setSnapshotRepId(String snapshotRepId) {
+        this.snapshotRepId = snapshotRepId;
+    }
+
+    /**
      * Getter for official.
      * 
      * @return the official
@@ -127,24 +145,6 @@ public class NexusServerBean {
         this.official = official;
     }
 
-    /**
-     * Getter for repositoryUrl.
-     * 
-     * @return the repositoryUrl
-     */
-    public String getRepositoryUrl() {
-        return this.repositoryUrl;
-    }
-
-    /**
-     * Sets the repositoryUrl.
-     * 
-     * @param repositoryUrl the repositoryUrl to set
-     */
-    public void setRepositoryUrl(String repositoryUrl) {
-        this.repositoryUrl = repositoryUrl;
-    }
-
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -153,6 +153,7 @@ public class NexusServerBean {
         result = prime * result + ((userName == null) ? 0 : userName.hashCode());
         result = prime * result + ((password == null) ? 0 : password.hashCode());
         result = prime * result + ((repositoryId == null) ? 0 : repositoryId.hashCode());
+        result = prime * result + ((snapshotRepId == null) ? 0 : snapshotRepId.hashCode());
         return result;
     }
 
@@ -200,6 +201,14 @@ public class NexusServerBean {
                 return false;
             }
         } else if (!repositoryId.equals(other.repositoryId)) {
+            return false;
+        }
+
+        if (snapshotRepId == null) {
+            if (other.snapshotRepId != null) {
+                return false;
+            }
+        } else if (!snapshotRepId.equals(other.snapshotRepId)) {
             return false;
         }
 

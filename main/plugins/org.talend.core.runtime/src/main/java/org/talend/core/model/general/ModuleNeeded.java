@@ -12,7 +12,6 @@
 // ============================================================================
 package org.talend.core.model.general;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -69,18 +68,7 @@ public class ModuleNeeded {
 
     private String moduleLocaion;
 
-    /**
-     * The maven uri configured from studio in components,extensions...... and cached in the MavenUriIndex.xml, one jar
-     * might be configured with many mvnuris
-     */
-    private Set<String> snapshotMvnUris;
-
     private String mavenUri;
-
-    /**
-     * snapshot uri with version -SNAPSHOT
-     */
-    private String mavenUriSnapshot;
 
     public static final String SINGLE_QUOTE = "'"; //$NON-NLS-1$
 
@@ -166,7 +154,7 @@ public class ModuleNeeded {
                 || StringUtils.isEmpty(mavenArtifact.getVersion())) {
             setModuleName(mavenArtifact.getArtifactId() + "." + mavenArtifact.getType()); //$NON-NLS-1$
         } else {
-            setModuleName(mavenArtifact.getArtifactId() + "-" + mavenArtifact.getVersion() + "." + mavenArtifact.getType());  //$NON-NLS-1$//$NON-NLS-2$
+            setModuleName(mavenArtifact.getArtifactId() + "-" + mavenArtifact.getVersion() + "." + mavenArtifact.getType()); //$NON-NLS-1$//$NON-NLS-2$
         }
 
     }
@@ -180,8 +168,8 @@ public class ModuleNeeded {
         this.required = required;
         this.installURL = installURL;
         this.requiredIf = requiredIf;
-        this.mavenUri = mavenUrl;
         this.status = status;
+        setMavenUri(mavenUrl);
     }
 
     public String getRequiredIf() {
@@ -280,7 +268,8 @@ public class ModuleNeeded {
     }
 
     public ELibraryInstallStatus getStatus() {
-        final ELibraryInstallStatus eLibraryInstallStatus = ModuleStatusProvider.getStatusMap().get(getMavenUriSnapshot());
+        String mvnUriStatusKey = getMavenUri(true);
+        final ELibraryInstallStatus eLibraryInstallStatus = ModuleStatusProvider.getStatusMap().get(mvnUriStatusKey);
         if (eLibraryInstallStatus != null) {
             return eLibraryInstallStatus;
         } else {
@@ -292,15 +281,15 @@ public class ModuleNeeded {
             if (existLibraries.contains(getModuleName())) {
                 status = ELibraryInstallStatus.INSTALLED;
             } else {// then try to resolve locally
-                String localMavenUri = getMavenUriSnapshot().replace("mvn:", "mvn:" + MavenConstants.LOCAL_RESOLUTION_URL + "!"); //$NON-NLS-1$ //$NON-NLS-2$
+                String localMavenUri = mvnUriStatusKey.replace("mvn:", "mvn:" + MavenConstants.LOCAL_RESOLUTION_URL + "!"); //$NON-NLS-1$ //$NON-NLS-2$
                 try {
                     getMavenResolver().resolve(localMavenUri);
                     status = ELibraryInstallStatus.INSTALLED;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     status = ELibraryInstallStatus.NOT_INSTALLED;
                 }
             }
-            ModuleStatusProvider.getStatusMap().put(getMavenUriSnapshot(), status);
+            ModuleStatusProvider.getStatusMap().put(mvnUriStatusKey, status);
         }
         return this.status;
     }
@@ -500,32 +489,8 @@ public class ModuleNeeded {
         return true;
     }
 
-    public String getMavenUriSnapshot() {
-        MavenArtifact artifact = null;
-        if (getMavenUri() != null) {
-            if (getMavenUri().split(MavenUrlHelper.SEPERATOR).length < 4 && getModuleName().lastIndexOf(".") != -1) {
-                String extension = getModuleName().substring(getModuleName().lastIndexOf(".") + 1, getModuleName().length());
-                artifact = MavenUrlHelper.parseMvnUrl(getMavenUri());
-                if (artifact != null) {
-                    artifact.setType(extension);
-                }
-            } else {
-                artifact = MavenUrlHelper.parseMvnUrl(getMavenUri());
-            }
-        }
-
-        // for non-talend libs.
-        if (artifact != null && !MavenConstants.DEFAULT_LIB_GROUP_ID.equals(artifact.getGroupId())) {
-            return getMavenUri(); // snapshot url same as maven url
-        }
-
-        // set an defaut maven uri if uri is null or empty, this could be done in the set
-        // but this would mean to sure the set is called after the name is set.
-        if (StringUtils.isEmpty(mavenUriSnapshot) && artifact != null) {
-            mavenUriSnapshot = MavenUrlHelper.generateMvnUrl(artifact.getGroupId(), artifact.getArtifactId(),
-                    artifact.getVersion() + "-SNAPSHOT", artifact.getType(), artifact.getClassifier());
-        }
-        if (StringUtils.isEmpty(mavenUriSnapshot)) {
+    public String getMavenUri(boolean autoGenerate) {
+        if (autoGenerate && (mavenUri == null || "".equals(mavenUri))) { //$NON-NLS-1$
             // get the latest snapshot maven uri from index as default
             ILibraryManagerService libManagerService = (ILibraryManagerService) GlobalServiceRegister.getDefault().getService(
                     ILibraryManagerService.class);
@@ -555,31 +520,10 @@ public class ModuleNeeded {
                     }
 
                 }
-                mavenUriSnapshot = maxVerstion;
+                mavenUri = addTypeForMavenUri(maxVerstion, getModuleName());
+            } else {
+                mavenUri = MavenUrlHelper.generateMvnUrlForJarName(getModuleName(), true, true);
             }
-        }
-
-        if (StringUtils.isEmpty(mavenUriSnapshot)) {
-            // generate a default one
-            mavenUriSnapshot = MavenUrlHelper.generateMvnUrlForJarName(getModuleName());
-        }
-        return mavenUriSnapshot;
-    }
-
-    /**
-     * Sets the mavenUriSnapshot.
-     * 
-     * @param mavenUriSnapshot the mavenUriSnapshot to set
-     */
-    public void setMavenUriSnapshot(String mavenUriSnapshot) {
-        this.mavenUriSnapshot = mavenUriSnapshot;
-    }
-
-    public String getMavenUri(boolean autoGenerate) {
-        // set an defaut maven uri if uri is null or empty, this could be done in the set
-        // but this would mean to sure the set is called after the name is set.
-        if (autoGenerate && (mavenUri == null || "".equals(mavenUri))) { //$NON-NLS-1$
-            return MavenUrlHelper.generateMvnUrlForJarName(getModuleName(), true, false);
         }
         return mavenUri;
     }
@@ -590,8 +534,6 @@ public class ModuleNeeded {
      * @return the mavenUriSnapshot
      */
     public String getMavenUri() {
-        // fix for TUP-3276 , get maven uri configured in studio(configured in component imoport/neededLibraries
-        // extension), don't generate automatically
         return getMavenUri(false);
     }
 
@@ -601,6 +543,19 @@ public class ModuleNeeded {
      * @param mavenUrl the mavenUrl to set
      */
     public void setMavenUri(String mavenUri) {
-        this.mavenUri = mavenUri;
+        this.mavenUri = addTypeForMavenUri(mavenUri, getModuleName());
+    }
+
+    private String addTypeForMavenUri(String uri, String moduleName) {
+        // make sure that mvn uri have the package
+        MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(uri, false);
+        if (parseMvnUrl != null && parseMvnUrl.getType() == null) {
+            if (moduleName.lastIndexOf(".") != -1) {
+                parseMvnUrl.setType(moduleName.substring(moduleName.lastIndexOf(".") + 1, moduleName.length()));
+                uri = MavenUrlHelper.generateMvnUrl(parseMvnUrl.getGroupId(), parseMvnUrl.getArtifactId(),
+                        parseMvnUrl.getVersion(), parseMvnUrl.getType(), parseMvnUrl.getClassifier());
+            }
+        }
+        return uri;
     }
 }

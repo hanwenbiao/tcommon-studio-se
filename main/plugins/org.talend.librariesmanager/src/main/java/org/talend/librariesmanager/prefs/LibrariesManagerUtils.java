@@ -79,19 +79,11 @@ public class LibrariesManagerUtils {
             nodeModulesList = node.getModulesNeeded();
         }
 
-        List<ModuleNeeded> modulesNeeded = ModulesNeededProvider.getModulesNeeded();
-        for (ModuleNeeded module : modulesNeeded) {
-            for (ModuleNeeded current : nodeModulesList) {
-                if (current.getContext() != null && current.getContext().equals(module.getContext())
-                        && current.getModuleName() != null && current.getModuleName().equals(module.getModuleName())) {
-                    if (module.getStatus() == ELibraryInstallStatus.NOT_INSTALLED
-                            && current.isRequired(node.getElementParameters())) {
-                        updatedModules.add(current);
-                        break;
-                    }
-                }
-
+        for (ModuleNeeded module : nodeModulesList) {
+            if (module.getStatus() == ELibraryInstallStatus.NOT_INSTALLED && module.isRequired(node.getElementParameters())) {
+                updatedModules.add(module);
             }
+
         }
         return updatedModules;
     }

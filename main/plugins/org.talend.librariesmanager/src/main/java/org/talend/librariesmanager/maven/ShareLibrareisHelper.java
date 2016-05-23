@@ -14,9 +14,11 @@ package org.talend.librariesmanager.maven;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -31,11 +33,11 @@ import org.talend.core.PluginChecker;
 import org.talend.core.language.ECodeLanguage;
 import org.talend.core.model.general.ModuleNeeded;
 import org.talend.core.nexus.NexusServerBean;
+import org.talend.core.nexus.TalendLibsServerManager;
 import org.talend.core.runtime.CoreRuntimePlugin;
 import org.talend.core.runtime.maven.MavenArtifact;
 import org.talend.core.runtime.maven.MavenConstants;
 import org.talend.core.runtime.maven.MavenUrlHelper;
-import org.talend.designer.maven.talendlib.TalendLibsServerManager;
 import org.talend.librariesmanager.i18n.Messages;
 import org.talend.librariesmanager.prefs.LibrariesManagerUtils;
 import org.talend.repository.model.IProxyRepositoryFactory;
@@ -125,14 +127,27 @@ public abstract class ShareLibrareisHelper {
                             return Status.CANCEL_STATUS;
                         }
                         SubMonitor mainSubMonitor = SubMonitor.convert(monitor, filesToShare.size());
-                        Iterator<ModuleNeeded> iterator = filesToShare.keySet().iterator();
+
+                        // collect groupId to search
+                        Set<String> groupIds = new HashSet<String>();
+                        for (ModuleNeeded module : filesToShare.keySet()) {
+                            if (module.getMavenUri() != null) {
+                                MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(module.getMavenUri());
+                                if (parseMvnUrl != null) {
+                                    groupIds.add(parseMvnUrl.getGroupId());
+                                }
+                            }
+                        }
+                        for (String groupId : groupIds) {
+                            searchResults.addAll(instance.search(customServer.getServer(), customServer.getUserName(),
+                                    customServer.getPassword(), customServer.getRepositoryId(), groupId, null, null));
+                            searchResults.addAll(instance.search(customServer.getServer(), customServer.getUserName(),
+                                    customServer.getPassword(), customServer.getSnapshotRepId(), groupId, null, null));
+                        }
 
                         int limit = searchLimit;
                         int shareIndex = 0;
-                        searchResults.addAll(instance.search(customServer.getServer(), customServer.getUserName(),
-                                customServer.getPassword(), customServer.getRepositoryId(),
-                                MavenConstants.DEFAULT_LIB_GROUP_ID, null, null));
-
+                        Iterator<ModuleNeeded> iterator = filesToShare.keySet().iterator();
                         while (iterator.hasNext()) {
                             if (monitor.isCanceled()) {
                                 return Status.CANCEL_STATUS;
@@ -146,7 +161,7 @@ public abstract class ShareLibrareisHelper {
                             File file = filesToShare.get(next);
                             String pomPath = file.getParent();
                             String name = file.getName();
-                            MavenArtifact artifact = MavenUrlHelper.parseMvnUrl(next.getMavenUriSnapshot());
+                            MavenArtifact artifact = MavenUrlHelper.parseMvnUrl(next.getMavenUri(true));
                             if (artifact == null) {
                                 continue;
                             }

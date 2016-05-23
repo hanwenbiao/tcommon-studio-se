@@ -48,10 +48,10 @@ import org.talend.core.ILibraryManagerService;
 import org.talend.core.model.general.ModuleNeeded;
 import org.talend.core.model.general.ModuleToInstall;
 import org.talend.core.nexus.NexusServerBean;
+import org.talend.core.nexus.TalendLibsServerManager;
 import org.talend.core.runtime.maven.MavenArtifact;
 import org.talend.core.runtime.maven.MavenConstants;
 import org.talend.core.runtime.maven.MavenUrlHelper;
-import org.talend.designer.maven.talendlib.TalendLibsServerManager;
 import org.talend.librariesmanager.ui.i18n.Messages;
 
 import us.monoid.json.JSONArray;
@@ -119,7 +119,7 @@ public class RemoteModulesHelper {
                     return;
                 }
                 // search from local nexus
-                searchFromLocalNexus(monitor);
+                searchFromLocalNexus(mavenUrisTofetch, monitor);
                 // check again after search
                 if (addCachedModulesToToBeInstallModules(toInstall, mavenUrisTofetch, contextMap, localCache)) {
                     if (collectModulesWithJarName) {
@@ -168,15 +168,37 @@ public class RemoteModulesHelper {
         }
     }
 
-    private void searchFromLocalNexus(IProgressMonitor monitor) {
+    private void searchFromLocalNexus(Set<String> mavenUristoSearch, IProgressMonitor monitor) {
         try {
+            // collect the groupIds to check
+            Set<String> groupIds = new HashSet<String>();
+            Set<String> snapshotgroupIds = new HashSet<String>();
+            for (String mvnUri : mavenUristoSearch) {
+                final MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(mvnUri);
+                if (parseMvnUrl != null) {
+                    if (parseMvnUrl.getVersion() != null && parseMvnUrl.getVersion().endsWith(MavenConstants.SNAPSHOT)) {
+                        snapshotgroupIds.add(parseMvnUrl.getGroupId());
+                    } else {
+                        groupIds.add(parseMvnUrl.getGroupId());
+                    }
+                }
+            }
+
             TalendLibsServerManager manager = TalendLibsServerManager.getInstance();
             NexusServerBean customServer = manager.getCustomNexusServer();
 
-            List<MavenArtifact> searchResults = manager.search(customServer.getServer(), customServer.getUserName(),
-                    customServer.getPassword(), customServer.getRepositoryId(), MavenConstants.DEFAULT_LIB_GROUP_ID, null, null);
-            monitor.worked(10);
-            addModulesToCache(searchResults, localCache);
+            for (String groupId : groupIds) {
+                List<MavenArtifact> searchResults = manager.search(customServer.getServer(), customServer.getUserName(),
+                        customServer.getPassword(), customServer.getRepositoryId(), groupId, null, null);
+                monitor.worked(10);
+                addModulesToCache(searchResults, localCache);
+            }
+            for (String snapshotgroupId : snapshotgroupIds) {
+                List<MavenArtifact> searchResults = manager.search(customServer.getServer(), customServer.getUserName(),
+                        customServer.getPassword(), customServer.getSnapshotRepId(), snapshotgroupId, null, null);
+                monitor.worked(10);
+                addModulesToCache(searchResults, localCache);
+            }
 
         } catch (Exception e1) {
             ExceptionHandler.process(e1);
@@ -185,32 +207,48 @@ public class RemoteModulesHelper {
 
     private void searchFromRemoteNexus(Set<String> mavenUristoSearch, IProgressMonitor monitor) {
         try {
-            int index = 0;
-            int limit = 100;
+            TalendLibsServerManager manager = TalendLibsServerManager.getInstance();
+            NexusServerBean nexusServer = manager.getLibrariesNexusServer();
             final Iterator<String> iterator = mavenUristoSearch.iterator();
-            while (index < mavenUristoSearch.size()) {
-                // get block of 100 jars
-                String jarsToCheck = "";
-                while (index < limit && index < mavenUristoSearch.size()) {
-                    index++;
-                    String uriToCheck = iterator.next();
-                    final MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(uriToCheck);
-                    if (parseMvnUrl != null) {
-                        jarsToCheck += parseMvnUrl.getArtifactId();
-                        if (index < limit && index < mavenUristoSearch.size()) {
-                            jarsToCheck += ",";
-                        }
-                    }
+            Map<String, List<StringBuffer>> groupIdAndJarsToCheck = new HashMap<String, List<StringBuffer>>();
+            while (iterator.hasNext()) {
+                if (monitor.isCanceled()) {
+                    break;
                 }
-                limit += 100;
-                TalendLibsServerManager manager = TalendLibsServerManager.getInstance();
-                NexusServerBean nexusServer = manager.getLibrariesNexusServer();
+                String uriToCheck = iterator.next();
+                final MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(uriToCheck);
+                if (parseMvnUrl != null) {
+                    StringBuffer jarsToCheck = null;
+                    List<StringBuffer> buffers = groupIdAndJarsToCheck.get(parseMvnUrl.getGroupId());
+                    if (buffers == null) {
+                        buffers = new ArrayList<StringBuffer>();
+                        groupIdAndJarsToCheck.put(parseMvnUrl.getGroupId(), buffers);
+                    }
+                    if (buffers.isEmpty() || buffers.get(buffers.size() - 1).length() > 2000) {
+                        jarsToCheck = new StringBuffer();
+                        buffers.add(jarsToCheck);
+                    } else {
+                        jarsToCheck = buffers.get(buffers.size() - 1);
+                    }
+                    jarsToCheck.append(parseMvnUrl.getArtifactId());
+                    jarsToCheck.append(",");
 
-                List<MavenArtifact> searchResults = manager.search(nexusServer.getServer(), nexusServer.getUserName(),
-                        nexusServer.getPassword(), nexusServer.getRepositoryId(), MavenConstants.DEFAULT_LIB_GROUP_ID,
-                        jarsToCheck, null);
-                monitor.worked(10);
-                addModulesToCache(searchResults, remoteCache);
+                }
+
+            }
+            for (String groupId : groupIdAndJarsToCheck.keySet()) {
+                List<StringBuffer> buffers = groupIdAndJarsToCheck.get(groupId);
+                for (StringBuffer toCheck : buffers) {
+                    String jarsToCheck = toCheck.toString();
+                    if (jarsToCheck.endsWith(",")) {
+                        jarsToCheck = jarsToCheck.substring(0, jarsToCheck.length() - 1);
+                    }
+                    List<MavenArtifact> searchResults = manager.search(nexusServer.getServer(), nexusServer.getUserName(),
+                            nexusServer.getPassword(), nexusServer.getRepositoryId(), groupId, jarsToCheck, null);
+                    monitor.worked(10);
+                    addModulesToCache(searchResults, remoteCache);
+
+                }
             }
 
         } catch (Exception e1) {
@@ -226,9 +264,6 @@ public class RemoteModulesHelper {
                 packageName = MavenConstants.TYPE_JAR;
             }
             String version = artifact.getVersion();
-            if (version.endsWith(MavenConstants.SNAPSHOT)) {
-                version = version.substring(0, version.indexOf(MavenConstants.SNAPSHOT));
-            }
             String description = artifact.getDescription();
             String license = artifact.getLicense();
             String license_url = artifact.getLicenseUrl();
@@ -552,22 +587,21 @@ public class RemoteModulesHelper {
             ModuleNeeded module = iterator.next();
             String mvnUri = module.getMavenUri();
             if (mvnUri == null) {
-                Set<String> configuredSnapshotMvnUris = new HashSet<String>();
+                Set<String> urisFromIndex = new HashSet<String>();
                 ILibraryManagerService librairesManagerService = (ILibraryManagerService) GlobalServiceRegister.getDefault()
                         .getService(ILibraryManagerService.class);
                 final String mavenUriFromIndex = librairesManagerService.getMavenUriFromIndex(module.getModuleName());
                 if (mavenUriFromIndex != null) {
                     final String[] split = mavenUriFromIndex.split(MavenUrlHelper.MVN_INDEX_SPLITER);
                     for (String fromIndex : split) {
-                        configuredSnapshotMvnUris.add(fromIndex);
+                        urisFromIndex.add(fromIndex);
                     }
                 }
-                if (configuredSnapshotMvnUris.isEmpty()) {
-                    mvnUri = module.getMavenUri(true);
+                if (urisFromIndex.isEmpty()) {
+                    mvnUri = module.getMavenUri();
                 } else {
                     // add all mvnuris from index to try to download
-                    for (String snapshotUri : configuredSnapshotMvnUris) {
-                        String uri = MavenUrlHelper.generateUriFromSnapshot(snapshotUri);
+                    for (String uri : urisFromIndex) {
                         if (uri != null) {
                             uri = addTypeForMavenUri(uri, module.getModuleName());
                             ModuleNeeded newModule = new ModuleNeeded(null, module.getModuleName(), null, true);
@@ -601,13 +635,13 @@ public class RemoteModulesHelper {
 
     private String addTypeForMavenUri(String uri, String moduleName) {
         // make sure that mvn uri have the package
-        final String[] split = uri.split("/");
-        if (split.length < 4) {
-            String type = MavenConstants.TYPE_JAR;
+        MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(uri, false);
+        if (parseMvnUrl != null && parseMvnUrl.getType() == null) {
             if (moduleName.lastIndexOf(".") != -1) {
-                type = moduleName.substring(moduleName.lastIndexOf(".") + 1, moduleName.length());
+                parseMvnUrl.setType(moduleName.substring(moduleName.lastIndexOf(".") + 1, moduleName.length()));
+                uri = MavenUrlHelper.generateMvnUrl(parseMvnUrl.getGroupId(), parseMvnUrl.getArtifactId(),
+                        parseMvnUrl.getVersion(), parseMvnUrl.getType(), parseMvnUrl.getClassifier());
             }
-            uri = uri + "/" + type;
         }
         return uri;
     }
@@ -619,8 +653,8 @@ public class RemoteModulesHelper {
 
     /**
      * 
-     * collect all vesions to one ModuleToInstall to don't display several times for one jar in the dialog if need to
-     * download all versions
+     * collect all vesions to one ModuleToInstall to don't display several times for the same jar in the dialog if need
+     * to download all versions
      * 
      */
     public void collectModulesWithJarName(List<ModuleToInstall> toInstall) {

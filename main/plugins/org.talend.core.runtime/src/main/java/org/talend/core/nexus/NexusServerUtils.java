@@ -12,7 +12,10 @@
 // ============================================================================
 package org.talend.core.nexus;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
@@ -29,20 +32,16 @@ import javax.net.ssl.SSLSocketFactory;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.Node;
+import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.talend.commons.exception.ExceptionHandler;
-import org.talend.commons.exception.LoginException;
-import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.utils.network.NetworkUtil;
-import org.talend.core.GlobalServiceRegister;
 import org.talend.core.prefs.ITalendCorePrefConstants;
 import org.talend.core.runtime.maven.MavenArtifact;
-import org.talend.core.service.IRemoteService;
-import org.talend.utils.json.JSONException;
-import org.talend.utils.json.JSONObject;
 import org.talend.utils.ssl.SSLUtils;
 
 /**
@@ -56,79 +55,10 @@ public class NexusServerUtils {
      */
     public static final String ORG_TALEND_DESIGNER_CORE = "org.talend.designer.core"; //$NON-NLS-1$
 
-    public static final String KEY_NEXUS_RUL = "nexusUrl";//$NON-NLS-1$ 
-
-    public static final String KEY_NEXUS_USER = "username";//$NON-NLS-1$ 
-
-    public static final String KEY_NEXUS_PASS = "password";//$NON-NLS-1$ 
-
-    public static final String KEY_CUSTOM_LIB_REPOSITORY = "repository";//$NON-NLS-1$ 
-
-    public static final String KEY_SOFTWARE_UPDATE_REPOSITORY = "repositoryID";//$NON-NLS-1$ 
-
-    public static final String TALEND_LIB_SERVER = "https://talend-update.talend.com/nexus/";//$NON-NLS-1$ 
-
-    public static final String TALEND_LIB_USER = "";//$NON-NLS-1$ 
-
-    public static final String TALEND_LIB_PASSWORD = "";//$NON-NLS-1$ 
-
-    public static final String TALEND_LIB_REPOSITORY = "libraries";//$NON-NLS-1$ 
-
     public static final int CONNECTION_OK = 200;
-
-    //    public static final String TALEND_LIB_SERVER = "http://localhost:8081/nexus/";//$NON-NLS-1$ 
-    //
-    //    public static final String TALEND_LIB_USER = "";//$NON-NLS-1$ 
-    //
-    //    public static final String TALEND_LIB_PASSWORD = "";//$NON-NLS-1$ 
-    //
-    //    public static final String TALEND_LIB_REPOSITORY = "org.talend.libraries";//$NON-NLS-1$ 
 
     // the max search result is 200 by defult from nexus
     private static final int MAX_SEARCH_COUNT = 200;
-
-    /**
-     * 
-     * DOC Talend Comment method "getSoftwareUpdateNexusServer". get nexus server configured in TAC for patch
-     * 
-     * @param adminUrl
-     * @param userName
-     * @param password
-     * @return
-     */
-    public static NexusServerBean getSoftwareUpdateNexusServer(String adminUrl, String userName, String password) {
-        try {
-            if (adminUrl != null && !"".equals(adminUrl)
-                    && GlobalServiceRegister.getDefault().isServiceRegistered(IRemoteService.class)) {
-                IRemoteService remoteService = (IRemoteService) GlobalServiceRegister.getDefault().getService(
-                        IRemoteService.class);
-                JSONObject updateRepositoryUrl;
-                updateRepositoryUrl = remoteService.getUpdateRepositoryUrl(userName, password, adminUrl);
-                String nexus_url = updateRepositoryUrl.getString(KEY_NEXUS_RUL);
-                String nexus_user = updateRepositoryUrl.getString(KEY_NEXUS_USER);
-                String nexus_pass = updateRepositoryUrl.getString(KEY_NEXUS_PASS);
-                String nexus_repository = updateRepositoryUrl.getString(KEY_SOFTWARE_UPDATE_REPOSITORY);
-                boolean connectionOK = checkConnectionStatus(nexus_url, nexus_repository, nexus_user, nexus_pass);
-                if (!connectionOK) {
-                    return null;
-                }
-                NexusServerBean serverBean = new NexusServerBean();
-                serverBean.setServer(nexus_url);
-                serverBean.setUserName(nexus_user);
-                serverBean.setPassword(nexus_pass);
-                serverBean.setRepositoryId(nexus_repository);
-                return serverBean;
-            }
-        } catch (PersistenceException e) {
-            ExceptionHandler.process(e);
-        } catch (LoginException e) {
-            ExceptionHandler.process(e);
-        } catch (JSONException e) {
-            ExceptionHandler.process(e);
-        }
-
-        return null;
-    }
 
     /**
      * 
@@ -242,7 +172,8 @@ public class NexusServerUtils {
 
             InputStream inputStream = urlConnection.getInputStream();
             Document document = saxReader.read(inputStream);
-
+            // test
+            // writeDocument(document, new File("D:/search.txt"));
             Node countNode = document.selectSingleNode("/searchNGResponse/totalCount");
             if (countNode != null) {
                 try {
@@ -315,7 +246,7 @@ public class NexusServerUtils {
     }
 
     public static String resolveSha1(String nexusUrl, final String userName, final String password, String repositoryId,
-            String groupId, String artifactId, String version) throws Exception {
+            String groupId, String artifactId, String version, String type) throws Exception {
         HttpURLConnection urlConnection = null;
         final Authenticator defaultAuthenticator = NetworkUtil.getDefaultAuthenticator();
         if (userName != null && !"".equals(userName)) {
@@ -330,7 +261,7 @@ public class NexusServerUtils {
         }
         try {
             String service = NexusConstants.SERVICES_RESOLVE + "a=" + artifactId + "&g=" + groupId + "&r=" + repositoryId + "&v="
-                    + version;
+                    + version + "&p=" + type;
             urlConnection = getHttpURLConnection(nexusUrl, service, userName, password);
             SAXReader saxReader = new SAXReader();
 
@@ -409,6 +340,21 @@ public class NexusServerUtils {
         int timeout = node.getInt(ITalendCorePrefConstants.NEXUS_TIMEOUT, 10000);
         urlConnection.setConnectTimeout(timeout);
         return urlConnection;
+    }
+
+    private static void writeDocument(Document document, File file) throws IOException {
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        format.setEncoding("UTF-8");
+        XMLWriter writer = null;
+        try {
+            writer = new XMLWriter(new FileWriter(file), format);
+            writer.write(document);
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
+
     }
 
 }

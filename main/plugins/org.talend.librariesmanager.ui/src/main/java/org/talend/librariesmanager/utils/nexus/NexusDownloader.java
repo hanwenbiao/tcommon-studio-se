@@ -36,10 +36,10 @@ import org.talend.core.download.IDownloadHelper;
 import org.talend.core.model.general.Project;
 import org.talend.core.nexus.NexusConstants;
 import org.talend.core.nexus.NexusServerBean;
+import org.talend.core.nexus.TalendLibsServerManager;
 import org.talend.core.runtime.maven.MavenArtifact;
 import org.talend.core.runtime.maven.MavenConstants;
 import org.talend.core.runtime.maven.MavenUrlHelper;
-import org.talend.designer.maven.talendlib.TalendLibsServerManager;
 import org.talend.designer.maven.utils.PomUtil;
 import org.talend.librariesmanager.maven.ArtifactsDeployer;
 import org.talend.repository.ProjectManager;
@@ -113,11 +113,9 @@ public class NexusDownloader implements IDownloadHelper {
                 bos.flush();
                 bos.close();
                 if (bytesDownloaded == contentLength) {
-                    String snapshotUri = MavenUrlHelper.generateSnapshotMavenUri(mavenUri);
                     ArtifactsDeployer deployer = new ArtifactsDeployer();
-                    deployer.deployToLocalMaven(destination.getAbsolutePath(), snapshotUri);
+                    deployer.deployToLocalMaven(destination.getAbsolutePath(), mavenUri);
                 }
-
             }
             fireDownloadComplete();
         } finally {

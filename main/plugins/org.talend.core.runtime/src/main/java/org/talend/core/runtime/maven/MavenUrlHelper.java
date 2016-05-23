@@ -38,6 +38,11 @@ public class MavenUrlHelper {
     public static final String VERSION_SNAPSHOT = "SNAPSHOT";
 
     public static MavenArtifact parseMvnUrl(String mvnUrl) {
+        return parseMvnUrl(mvnUrl, true);
+    }
+
+    public static MavenArtifact parseMvnUrl(String mvnUrl, boolean setDefaultValue) {
+
         if (mvnUrl == null || !mvnUrl.startsWith(MVN_PROTOCOL)) {
             return null;
         }
@@ -89,11 +94,11 @@ public class MavenUrlHelper {
             /*
              * set default values.
              */
-            if (artifact.getVersion() == null) {
+            if (artifact.getVersion() == null && setDefaultValue) {
                 // if not set, will be LATEST by default
                 artifact.setVersion(VERSION_LATEST);
             }
-            if (artifact.getType() == null) {
+            if (artifact.getType() == null && setDefaultValue) {
                 // if not set, will be jar by default
                 artifact.setType(MavenConstants.TYPE_JAR);
             }
@@ -103,6 +108,7 @@ public class MavenUrlHelper {
         }
 
         return artifact;
+
     }
 
     /**
@@ -201,34 +207,6 @@ public class MavenUrlHelper {
         }
 
         return mvnUrl.toString();
-    }
-
-    public static String generateSnapshotMavenUri(String mavenUri) {
-        MavenArtifact parseMvnUrl = parseMvnUrl(mavenUri);
-        if (parseMvnUrl == null) {
-            return null;
-        }
-        if (!MavenConstants.DEFAULT_LIB_GROUP_ID.equals(parseMvnUrl.getGroupId())) {
-            return mavenUri; // snapshot url same as maven url
-        }
-
-        return generateMvnUrl(parseMvnUrl.getGroupId(), parseMvnUrl.getArtifactId(), parseMvnUrl.getVersion()
-                + MavenConstants.SNAPSHOT, parseMvnUrl.getType(), parseMvnUrl.getClassifier());
-
-    }
-
-    public static String generateUriFromSnapshot(String snapshotMvnuri) {
-        MavenArtifact parseMvnUrl = parseMvnUrl(snapshotMvnuri);
-        if (parseMvnUrl == null) {
-            return null;
-        }
-        if (!MavenConstants.DEFAULT_LIB_GROUP_ID.equals(parseMvnUrl.getGroupId())) {
-            return snapshotMvnuri; // snapshot url same as maven url
-        }
-        String snapshotVerstion = parseMvnUrl.getVersion();
-        String verstion = snapshotVerstion.substring(0, snapshotVerstion.indexOf(MavenConstants.SNAPSHOT));
-        return generateMvnUrl(parseMvnUrl.getGroupId(), parseMvnUrl.getArtifactId(), verstion, parseMvnUrl.getType(),
-                parseMvnUrl.getClassifier());
     }
 
 }

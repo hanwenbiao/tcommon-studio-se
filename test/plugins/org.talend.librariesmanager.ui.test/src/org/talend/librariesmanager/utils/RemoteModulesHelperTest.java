@@ -62,31 +62,6 @@ public class RemoteModulesHelperTest {
                 neededModules, toInstall1, false);
         notInstalledModulesRunnable.run(new NullProgressMonitor());
         assertEquals(4, toInstall1.size());
-        for (int i = 0; i < toInstall1.size(); i++) {
-            final ModuleToInstall m = toInstall1.get(i);
-            switch (i) {
-            case 0:
-                assertEquals(m.getName(), "mysql.jar");
-                assertEquals(m.getMavenUri(), "mvn:org.talend.libraries/mysql/6.0.0/jar");
-                assertEquals(m.getContext(), "tMysqlInput");
-                break;
-            case 1:
-                assertEquals(m.getName(), "mysql.jar");
-                assertEquals(m.getMavenUri(), "mvn:org.talend.libraries/mysql/6.1.0/jar");
-                assertEquals(m.getContext(), "tMysqlInput");
-                break;
-            case 2:
-                assertEquals(m.getName(), "test.exe");
-                assertEquals(m.getMavenUri(), "mvn:org.talend.libraries/test/6.0.0/exe");
-                assertEquals(m.getContext(), "tMyComponent3");
-                break;
-            case 3:
-                assertEquals(m.getName(), "test.jar");
-                assertEquals(m.getMavenUri(), "mvn:org.talend.libraries/test/6.0.0/jar");
-                assertEquals(m.getContext(), "tMyComponent1 | tMyComponent2");
-                break;
-            }
-        }
 
     }
 }

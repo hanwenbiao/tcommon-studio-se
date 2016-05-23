@@ -21,8 +21,9 @@ import org.talend.core.download.DownloadHelperWithProgress;
 import org.talend.core.download.IDownloadHelper;
 import org.talend.core.model.general.ModuleToInstall;
 import org.talend.core.nexus.NexusServerBean;
+import org.talend.core.nexus.TalendLibsServerManager;
+import org.talend.core.runtime.maven.MavenArtifact;
 import org.talend.core.runtime.maven.MavenUrlHelper;
-import org.talend.designer.maven.talendlib.TalendLibsServerManager;
 
 /**
  * created by wchen on Apr 24, 2015 Detailled comment
@@ -48,9 +49,14 @@ public class NexusDownloadHelperWithProgress extends DownloadHelperWithProgress 
         if (toInstall.isFromCustomNexus()) {
             final NexusServerBean customNexusServer = TalendLibsServerManager.getInstance().getCustomNexusServer();
             if (customNexusServer != null) {
-                progressMonitor.subTask(toInstall.getName() + " from " + customNexusServer.getServer());
-                final MavenResolver mavenResolver = TalendLibsServerManager.getInstance().getMavenResolver();
-                resolved = mavenResolver.resolve(MavenUrlHelper.generateSnapshotMavenUri(componentUrl.toExternalForm()));
+                String mvnUri = componentUrl.toExternalForm();
+                MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(mvnUri);
+                if (parseMvnUrl != null) {
+                    progressMonitor.subTask("Downloading " + toInstall.getName() + ": " + mvnUri + " from "
+                            + customNexusServer.getServer());
+                    final MavenResolver mavenResolver = TalendLibsServerManager.getInstance().getMavenResolver();
+                    resolved = mavenResolver.resolve(componentUrl.toExternalForm());
+                }
             }
         }
         if (resolved != null && resolved.exists()) {

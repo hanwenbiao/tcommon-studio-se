@@ -31,10 +31,11 @@ import org.talend.commons.exception.BusinessException;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.core.nexus.NexusConstants;
 import org.talend.core.nexus.NexusServerBean;
+import org.talend.core.nexus.TalendLibsServerManager;
 import org.talend.core.runtime.maven.MavenArtifact;
+import org.talend.core.runtime.maven.MavenConstants;
 import org.talend.core.runtime.maven.MavenUrlHelper;
 import org.talend.designer.maven.model.TalendMavenConstants;
-import org.talend.designer.maven.talendlib.TalendLibsServerManager;
 import org.talend.designer.maven.utils.PomUtil;
 import org.talend.utils.io.FilesUtils;
 
@@ -64,13 +65,23 @@ public class ArtifactsDeployer {
      */
     public void deployToLocalMaven(Map<String, String> jarSourceAndMavenUri) throws Exception {
         for (String mavenUri : jarSourceAndMavenUri.keySet()) {
-            deployToLocalMaven(jarSourceAndMavenUri.get(mavenUri), mavenUri);
+            try {
+                deployToLocalMaven(jarSourceAndMavenUri.get(mavenUri), mavenUri);
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+                continue;
+            }
         }
     }
 
     public void deployToLocalMaven(Map<String, String> jarSourceAndMavenUri, boolean updateRemoteJar) throws Exception {
         for (String mavenUri : jarSourceAndMavenUri.keySet()) {
-            deployToLocalMaven(jarSourceAndMavenUri.get(mavenUri), mavenUri, updateRemoteJar);
+            try {
+                deployToLocalMaven(jarSourceAndMavenUri.get(mavenUri), mavenUri, updateRemoteJar);
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+                continue;
+            }
         }
     }
 
@@ -125,6 +136,9 @@ public class ArtifactsDeployer {
     }
 
     public void installToRemote(File content, MavenArtifact artifact, String type) throws Exception {
+        if (nexusServer == null) {
+            initCustomNexus();
+        }
         URL targetURL;
         try {
             String artifactPath = PomUtil.getArtifactPath(artifact);
@@ -135,8 +149,13 @@ public class ArtifactsDeployer {
                     artifactPath = artifactPath + "." + type;
                 }
             }
-
-            String target = repositoryUrl + artifactPath;
+            String target = repositoryUrl;
+            if (artifact.getVersion() != null && artifact.getVersion().endsWith(MavenConstants.SNAPSHOT)) {
+                target = target + nexusServer.getSnapshotRepId() + NexusConstants.SLASH;
+            } else {
+                target = target + nexusServer.getRepositoryId() + NexusConstants.SLASH;
+            }
+            target = target + artifactPath;
             targetURL = new URL(target);
             installToRemote(new FileEntity(content), targetURL);
         } catch (MalformedURLException e) {
@@ -181,8 +200,7 @@ public class ArtifactsDeployer {
                 if (server.endsWith(NexusConstants.SLASH)) {
                     server = server.substring(0, server.length() - 1);
                 }
-                repositoryUrl = server + NexusConstants.CONTENT_REPOSITORIES + nexusServer.getRepositoryId()
-                        + NexusConstants.SLASH;
+                repositoryUrl = server + NexusConstants.CONTENT_REPOSITORIES;
             }
         }
     }

@@ -27,9 +27,6 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.ILibraryManagerService;
 import org.talend.core.model.general.ModuleNeeded;
-import org.talend.core.runtime.maven.MavenArtifact;
-import org.talend.core.runtime.maven.MavenConstants;
-import org.talend.core.runtime.maven.MavenUrlHelper;
 import org.talend.librariesmanager.maven.ArtifactsDeployer;
 import org.talend.librariesmanager.maven.ShareLibrareisHelper;
 import org.talend.librariesmanager.model.ModulesNeededProvider;
@@ -87,13 +84,7 @@ public class ShareLibsJob extends Job {
                     return null;
                 }
 
-                // only deploy libraries with group id org.talend.libraries
-                MavenArtifact parseMvnUrl = MavenUrlHelper.parseMvnUrl(module.getMavenUri());
-                if (parseMvnUrl == null || !MavenConstants.DEFAULT_LIB_GROUP_ID.equals(parseMvnUrl.getGroupId())) {
-                    continue;
-                }
-
-                final String jarPathFromMaven = librariesService.getJarPathFromMaven(module.getMavenUriSnapshot());
+                final String jarPathFromMaven = librariesService.getJarPathFromMaven(module.getMavenUri(true));
                 if (jarPathFromMaven == null) {
                     continue;
                 }

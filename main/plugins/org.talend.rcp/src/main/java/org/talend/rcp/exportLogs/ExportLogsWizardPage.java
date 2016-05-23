@@ -46,13 +46,13 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.PlatformUI;
 import org.osgi.service.prefs.BackingStoreException;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.utils.VersionUtils;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.runtime.services.IGenericService;
 import org.talend.core.services.ICoreTisService;
-import org.talend.core.ui.CoreUIPlugin;
 import org.talend.core.ui.branding.IBrandingService;
 import org.talend.core.updatesite.IUpdateSiteBean;
 import org.talend.rcp.i18n.Messages;
@@ -269,7 +269,7 @@ public class ExportLogsWizardPage extends WizardPage {
         info.append(NEW_LINE);
 
         info.append("-----Installed Addons-----").append(NEW_LINE); //$NON-NLS-1$
-        IPreferenceStore preferenceStore = CoreUIPlugin.getDefault().getPreferenceStore();
+        IPreferenceStore preferenceStore = PlatformUI.getPreferenceStore();
         String addons = preferenceStore.getString("ADDONS"); //$NON-NLS-1$
         JSONObject jsonObject = null;
         try {
