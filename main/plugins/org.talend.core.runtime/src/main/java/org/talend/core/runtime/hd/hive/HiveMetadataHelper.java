@@ -141,6 +141,14 @@ public class HiveMetadataHelper {
         return false;
     }
 
+    public static boolean isHiveStandaloneMode(String dbTypeDisplay, String hiveModeDisplay) {
+        if (dbTypeDisplay != null && hiveModeDisplay != null
+                && EDatabaseTypeName.HIVE.getDisplayName().equalsIgnoreCase(dbTypeDisplay)) {
+            return HiveModeInfo.getByDisplay(hiveModeDisplay) == HiveModeInfo.STANDALONE;
+        }
+        return false;
+    }
+
     public static String[] getHiveServersDisplay(String hiveDistribution, String hiveVersion, boolean byDisplay) {
         List<String> hiveServerItems = new ArrayList<String>();
         if (doSupportHive1(hiveDistribution, hiveVersion, byDisplay)) {
@@ -150,6 +158,13 @@ public class HiveMetadataHelper {
             hiveServerItems.add(HiveServerVersionInfo.HIVE_SERVER_2.getDisplayName());
         }
         return hiveServerItems.toArray(new String[0]);
+    }
+
+    /**
+     * return true/false of {@link MRComponent#isExecutedThroughWebHCat}.
+     */
+    public static boolean isExecutedThroughWebHCat(String hiveDistribution, String hiveVersion, boolean byDisplay) {
+        return doSupportMethod(hiveDistribution, hiveVersion, byDisplay, "isExecutedThroughWebHCat");//$NON-NLS-1$
     }
 
     /**
@@ -171,6 +186,20 @@ public class HiveMetadataHelper {
      */
     public static boolean doSupportTez(String hiveDistribution, String hiveVersion, boolean byDisplay) {
         return doSupportMethod(hiveDistribution, hiveVersion, byDisplay, "doSupportTezForHive");//$NON-NLS-1$
+    }
+
+    /**
+     * return true/false of {@link HiveComponent#doSupportSSL}.
+     */
+    public static boolean doSupportSSL(String hiveDistribution, String hiveVersion, boolean byDisplay) {
+        return doSupportMethod(hiveDistribution, hiveVersion, byDisplay, "doSupportSSL");//$NON-NLS-1$
+    }
+
+    /**
+     * return true/false of {@link HiveComponent#doSupportSSLwithKerberos}.
+     */
+    public static boolean doSupportSSLwithKerberos(String hiveDistribution, String hiveVersion, boolean byDisplay) {
+        return doSupportMethod(hiveDistribution, hiveVersion, byDisplay, "doSupportSSLwithKerberos"); //$NON-NLS-1$
     }
 
     /**

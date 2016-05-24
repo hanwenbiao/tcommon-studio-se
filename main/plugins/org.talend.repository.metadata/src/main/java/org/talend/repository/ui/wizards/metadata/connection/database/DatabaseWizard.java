@@ -92,6 +92,7 @@ import org.talend.utils.json.JSONException;
 import org.talend.utils.json.JSONObject;
 import org.talend.utils.sql.ConnectionUtils;
 import org.talend.utils.sugars.ReturnCode;
+
 import orgomg.cwm.objectmodel.core.ModelElement;
 import orgomg.cwm.objectmodel.core.Package;
 import orgomg.cwm.resource.relational.Catalog;
@@ -826,6 +827,7 @@ public class DatabaseWizard extends CheckLastVersionRepositoryWizard implements 
             throws ClassNotFoundException, InstantiationException, IllegalAccessException, SQLException {
         java.sql.Connection sqlConn = null;
         ExtractMetaDataUtils extractMeta = ExtractMetaDataUtils.getInstance();
+        String orginalUrl = dbConn.getURL();
         try {
             MetadataFillFactory dbInstance = MetadataFillFactory.getDBInstance(metaConnection);
             dbConn = (DatabaseConnection) dbInstance.fillUIConnParams(metaConnection, dbConn);
@@ -846,6 +848,11 @@ public class DatabaseWizard extends CheckLastVersionRepositoryWizard implements 
                         MetadataConnectionUtils.getPackageFilter(dbConn, dbMetaData, false));
             }
         } finally {
+            EDatabaseTypeName dbType = EDatabaseTypeName.getTypeFromDbType(dbConn.getDatabaseType());
+            if (EDatabaseTypeName.HIVE.equals(dbType)) {
+                // in case show password dirrectly
+                dbConn.setURL(orginalUrl);
+            }
             // bug 22619
             if (sqlConn != null) {
                 ConnectionUtils.closeConnection(sqlConn);

@@ -640,6 +640,9 @@ public class ExternalModulesInstallDialogWithProgress extends ExternalModulesIns
                     }
                 });
             }
+            if (enabledButtonCount.get() == 0) {
+                close();
+            }
         }
     }
 

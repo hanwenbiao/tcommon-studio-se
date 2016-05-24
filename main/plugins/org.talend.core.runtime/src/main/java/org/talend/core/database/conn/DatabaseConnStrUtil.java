@@ -210,6 +210,7 @@ public class DatabaseConnStrUtil {
             // set a default
             url = getHive1EmbeddedURLString();
         }
+        url = attachAdditionalHiveParameters(url, dbConn, false);
         return url;
     }
 
@@ -230,6 +231,52 @@ public class DatabaseConnStrUtil {
         if (url == null) {
             // set a default
             url = getHive1StandaloneURLString(false, server, port, sidOrDatabase);
+        }
+        url = attachAdditionalHiveParameters(url, dbConn, true);
+        return url;
+    }
+
+    private static String attachAdditionalHiveParameters(String urlIn, DatabaseConnection dbConn, boolean encryptPassword) {
+        String url = urlIn;
+        boolean useSSL = Boolean.valueOf(dbConn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_USE_SSL));
+        if (useSSL) {
+            if (!url.endsWith(";")) { //$NON-NLS-1$
+                url = url + ";"; //$NON-NLS-1$
+            }
+            url = url + "ssl=true;"; //$NON-NLS-1$
+            String trustStorePath = dbConn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH);
+            if (trustStorePath != null) {
+                url = url + "sslTrustStore=" + trustStorePath + ";"; //$NON-NLS-1$//$NON-NLS-2$
+            }
+            String trustStorePassword = null;
+            trustStorePassword = dbConn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD);
+            if (trustStorePassword != null) {
+                if (encryptPassword) {
+                    trustStorePassword = "encrypted"; //$NON-NLS-1$
+                } else {
+                    if (trustStorePassword != null) {
+                        trustStorePassword = dbConn.getValue(trustStorePassword, false);
+                    }
+                }
+                if (trustStorePassword == null) {
+                    trustStorePassword = ""; //$NON-NLS-1$
+                }
+                url = url + "trustStorePassword=" + trustStorePassword; //$NON-NLS-1$
+            }
+            if (url.endsWith(";")) { //$NON-NLS-1$
+                url = url.substring(0, url.length() - 1);
+            }
+        }
+        String additionalJDBCSetting = dbConn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS);
+        if (additionalJDBCSetting != null && !additionalJDBCSetting.trim().isEmpty()) {
+            // I don't think user can set a password ends with ';', since it can't work in the url
+            if (!url.endsWith(";")) { //$NON-NLS-1$
+                url = url + ";"; //$NON-NLS-1$
+            }
+            if (additionalJDBCSetting.startsWith(";")) { //$NON-NLS-1$
+                additionalJDBCSetting = additionalJDBCSetting.substring(1);
+            }
+            url = url + additionalJDBCSetting;
         }
         return url;
     }

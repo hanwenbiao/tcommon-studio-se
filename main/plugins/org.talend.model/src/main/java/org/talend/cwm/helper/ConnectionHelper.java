@@ -915,6 +915,15 @@ public class ConnectionHelper {
         return false;
     }
 
+    public static boolean isRedshift(Connection connection) {
+        DatabaseConnection dbConn = SwitchHelpers.DATABASECONNECTION_SWITCH.doSwitch(connection);
+        if (dbConn != null) {
+            String databaseType = dbConn.getDatabaseType() == null ? "" : dbConn.getDatabaseType(); //$NON-NLS-1$
+            return "Redshift".equalsIgnoreCase(databaseType); //$NON-NLS-1$
+        }
+        return false;
+    }
+
     /**
      * Gets the metadata table by id from connection. Created by Marvin Wang on May 8, 2012.
      * 
@@ -953,16 +962,16 @@ public class ConnectionHelper {
             }
             return result;
         }
-        
+
         if (connection instanceof SAPConnection) {
             EList<Package> packages = connection.getDataPackage();
             for (Package pack : new ArrayList<Package>(packages)) {
                 PackageHelper.getAllTables(pack, result);
             }
-            result.addAll(((SAPConnection)connection).getBWDataSources());
-            result.addAll(((SAPConnection)connection).getBWDataStoreObjects());
-            result.addAll(((SAPConnection)connection).getBWInfoCubes());
-            result.addAll(((SAPConnection)connection).getBWInfoObjects());
+            result.addAll(((SAPConnection) connection).getBWDataSources());
+            result.addAll(((SAPConnection) connection).getBWDataStoreObjects());
+            result.addAll(((SAPConnection) connection).getBWInfoCubes());
+            result.addAll(((SAPConnection) connection).getBWInfoObjects());
             return result;
         }
         // else if (connection instanceof SAPConnection) {

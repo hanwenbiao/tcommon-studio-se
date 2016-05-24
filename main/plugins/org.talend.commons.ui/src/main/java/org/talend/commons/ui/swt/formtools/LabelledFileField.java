@@ -12,6 +12,8 @@
 // ============================================================================
 package org.talend.commons.ui.swt.formtools;
 
+import java.util.concurrent.Callable;
+
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.swt.SWT;
@@ -29,6 +31,7 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
+import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.ui.runtime.i18n.Messages;
 import org.talend.commons.ui.utils.PathUtils;
 
@@ -51,6 +54,11 @@ public class LabelledFileField {
     private String result;
 
     private static final int DEFAULT_FIELD_STYLE = SWT.BORDER | SWT.SINGLE;
+
+    /**
+     * will be called after clicked finish button of browse file dialog
+     */
+    private Callable afterSetNewValueCallable;
 
     /**
      * Create a Label and a Text.
@@ -221,6 +229,13 @@ public class LabelledFileField {
     protected void setFileFieldValue(String result) {
         if (result != null) {
             text.setText(PathUtils.getPortablePath(result));
+        }
+        if (afterSetNewValueCallable != null) {
+            try {
+                afterSetNewValueCallable.call();
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+            }
         }
     }
 
@@ -404,5 +419,9 @@ public class LabelledFileField {
 
     public String getResult() {
         return this.result;
+    }
+
+    public void setAfterSetNewValueCallable(Callable callable) {
+        this.afterSetNewValueCallable = callable;
     }
 }

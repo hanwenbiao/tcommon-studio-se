@@ -598,7 +598,7 @@ public class RemoteModulesHelper {
                     }
                 }
                 if (urisFromIndex.isEmpty()) {
-                    mvnUri = module.getMavenUri();
+                    mvnUri = module.getMavenUri(true);
                 } else {
                     // add all mvnuris from index to try to download
                     for (String uri : urisFromIndex) {

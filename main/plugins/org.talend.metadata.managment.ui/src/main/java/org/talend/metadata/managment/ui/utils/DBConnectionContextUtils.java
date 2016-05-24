@@ -98,6 +98,10 @@ public final class DBConnectionContextUtils {
         HivePassword,
         HiveKeyTabPrincipal,
         HiveKeyTab,
+                                                        hiveAdditionalJDBCParameters,
+                                                        hiveUseSSL,
+                                                        hiveSSLTrustStorePath,
+                                                        hiveSSLTrustStorePassword,
 
         // hbase
         MasterPrincipal,
@@ -232,6 +236,19 @@ public final class DBConnectionContextUtils {
                 case HiveKeyTab:
                     value = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_KEYTAB);
                     ConnectionContextHelper.createParameters(varList, paramName, value);
+                    break;
+                case hiveAdditionalJDBCParameters:
+                    value = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS);
+                    ConnectionContextHelper.createParameters(varList, paramName, value);
+                    break;
+                case hiveSSLTrustStorePath:
+                    value = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH);
+                    ConnectionContextHelper.createParameters(varList, paramName, value);
+                    break;
+                case hiveSSLTrustStorePassword:
+                    value = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD);
+                    value = conn.getValue(value, false);
+                    ConnectionContextHelper.createParameters(varList, paramName, value, JavaTypesManager.PASSWORD);
                     break;
                 case MasterPrincipal:
                     value = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_HBASE_AUTHENTICATION_MASTERPRINCIPAL);
@@ -521,6 +538,18 @@ public final class DBConnectionContextUtils {
             break;
         case HiveKeyTab:
             conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_KEYTAB,
+                    ContextParameterUtils.getNewScriptCode(originalVariableName, LANGUAGE));
+            break;
+        case hiveAdditionalJDBCParameters:
+            conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS,
+                    ContextParameterUtils.getNewScriptCode(originalVariableName, LANGUAGE));
+            break;
+        case hiveSSLTrustStorePath:
+            conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH,
+                    ContextParameterUtils.getNewScriptCode(originalVariableName, LANGUAGE));
+            break;
+        case hiveSSLTrustStorePassword:
+            conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD,
                     ContextParameterUtils.getNewScriptCode(originalVariableName, LANGUAGE));
             break;
         case MasterPrincipal:
@@ -829,9 +858,30 @@ public final class DBConnectionContextUtils {
             cloneConn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_HIVE_JDBC_PROPERTIES,
                     HadoopRepositoryUtil.getOriginalValueOfProperties(contextType, jdbcPropertiesString));
 
+            String additionalJDBCSettings = cloneConn.getParameters()
+                    .get(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS);
+            cloneConn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS,
+                    ContextParameterUtils.getOriginalValue(contextType, additionalJDBCSettings));
+
             String propertiesString = cloneConn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_HIVE_PROPERTIES);
             cloneConn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_HIVE_PROPERTIES,
                     HadoopRepositoryUtil.getOriginalValueOfProperties(contextType, propertiesString));
+
+            String trustStorePath = cloneConn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH);
+            if (trustStorePath != null) {
+                cloneConn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH,
+                        ContextParameterUtils.getOriginalValue(contextType, trustStorePath));
+            }
+
+            String trustStorePassword = cloneConn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD);
+            if (trustStorePassword != null) {
+                cloneConn.getParameters()
+                        .put(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD,
+                                cloneConn.getValue(
+                                        cloneConn.getValue(
+                                                ContextParameterUtils.getOriginalValue(contextType, trustStorePassword), false),
+                                        true));
+            }
 
             String template = null;
             String hiveServerVersion = HiveServerVersionInfo.HIVE_SERVER_1.getKey();
@@ -1013,6 +1063,19 @@ public final class DBConnectionContextUtils {
             String keytab = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_KEYTAB);
             conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_KEYTAB,
                     ContextParameterUtils.getOriginalValue(contextType, keytab));
+
+            String addtionalJDBCParameters = conn.getParameters()
+                    .get(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS);
+            conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS,
+                    ContextParameterUtils.getOriginalValue(contextType, addtionalJDBCParameters));
+
+            String sslTrustStorePath = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH);
+            conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH,
+                    ContextParameterUtils.getOriginalValue(contextType, sslTrustStorePath));
+
+            String sslTrustStorePassword = conn.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD);
+            conn.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD,
+                    conn.getValue(ContextParameterUtils.getOriginalValue(contextType, sslTrustStorePassword), true));
         }
         // for Hbase
         if (EDatabaseTypeName.HBASE.equals(EDatabaseTypeName.getTypeFromDbType(conn.getDatabaseType()))) {
