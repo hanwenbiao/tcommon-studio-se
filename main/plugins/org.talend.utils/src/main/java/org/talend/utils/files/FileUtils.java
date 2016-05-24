@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.talend.utils.string.StringUtilities;
 import org.talend.utils.sugars.ReturnCode;
@@ -58,7 +59,7 @@ public final class FileUtils {
         dis = new DataInputStream(bis);
 
         OutputStream tempOutputStream = new FileOutputStream(tmpFile);
-        BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(tempOutputStream, "UTF8"));
+        BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(tempOutputStream, "UTF8")); //$NON-NLS-1$
 
         String line;
         int len = 0;
@@ -89,7 +90,7 @@ public final class FileUtils {
      * @throws URISyntaxException
      */
     public static synchronized List<ReturnCode> checkBracketsInFile(String path) throws IOException, URISyntaxException {
-        List<ReturnCode> returncodes = new ArrayList<ReturnCode>();
+        List<ReturnCode> returncodes = new ArrayList<>();
         File file = new File(path);
         BufferedReader in = new BufferedReader(new FileReader(file));
 
@@ -100,7 +101,7 @@ public final class FileUtils {
             ReturnCode checkBlocks = StringUtilities.checkBalancedParenthesis(line, '(', ')');
             lineNb++;
             if (!checkBlocks.isOk()) {
-                String errorMsg = "Line " + lineNb + ": " + checkBlocks.getMessage();
+                String errorMsg = "Line " + lineNb + ": " + checkBlocks.getMessage(); //$NON-NLS-1$ //$NON-NLS-2$
                 returncodes.add(new ReturnCode(errorMsg, false));
             }
         }
@@ -109,28 +110,71 @@ public final class FileUtils {
         return returncodes;
     }
 
+    /**
+     * Iterate over a folder and append the files that match the filter to a list given in parameter.
+     * 
+     * @param aFolder - the folder to iterate over.
+     * @param fileList - the list to append into.
+     * @param filenameFilter - the filename filter.
+     */
     public static void getAllFilesFromFolder(File aFolder, List<File> fileList, FilenameFilter filenameFilter) {
-        File[] folderFiles = aFolder.listFiles(filenameFilter);
-        if (fileList != null && folderFiles != null) {
-            Collections.addAll(fileList, folderFiles);
-        }
-        File[] allFolders = aFolder.listFiles(new FileFilter() {
-
-            @Override
-            public boolean accept(File arg0) {
-                return arg0.isDirectory();
+        if (aFolder != null) {
+            File[] folderFiles = aFolder.listFiles(filenameFilter);
+            if (fileList != null && folderFiles != null) {
+                Collections.addAll(fileList, folderFiles);
             }
-        });
-        if (allFolders != null) {
-            for (File folder : allFolders) {
-                getAllFilesFromFolder(folder, fileList, filenameFilter);
+            File[] allFolders = aFolder.listFiles(new FileFilter() {
+
+                @Override
+                public boolean accept(File arg0) {
+                    return arg0.isDirectory();
+                }
+            });
+            if (allFolders != null) {
+                for (File folder : allFolders) {
+                    getAllFilesFromFolder(folder, fileList, filenameFilter);
+                }
             }
         }
     }
 
+    /**
+     * Iterate over a folder and append the files that match the filter to an empty list.
+     * 
+     * @param aFolder - the folder to iterate over.
+     * @param filenameFilter - the filename filter.
+     * @return the list of files that match the filter.
+     */
     public static List<File> getAllFilesFromFolder(File aFolder, FilenameFilter filenameFilter) {
-        List<File> files = new ArrayList<File>();
+        List<File> files = new ArrayList<>();
         getAllFilesFromFolder(aFolder, files, filenameFilter);
+        return files;
+    }
+
+    /**
+     * Iterate over a folder and append the files that match the filters to an empty list. The filters are a Map where
+     * the key is the file prefix
+     * 
+     * @param aFolder - the folder to iterate over.
+     * @param filterInfo - the filename filter.
+     * @return the list of files that match the filter.
+     */
+    public static List<File> getAllFilesFromFolder(File aFolder, Set<FilterInfo> filterInfo) {
+        List<File> files = new ArrayList<>();
+        if (filterInfo != null) {
+            for (FilterInfo info : filterInfo) {
+                files.addAll(getAllFilesFromFolder(aFolder, new FilenameFilter() {
+
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        if (name == null) {
+                            return false;
+                        }
+                        return name.startsWith(info.getPrefix()) && name.endsWith(info.getSuffix());
+                    }
+                }));
+            }
+        }
         return files;
     }
 }
