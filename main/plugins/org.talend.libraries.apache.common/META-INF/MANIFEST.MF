@@ -7,8 +7,7 @@ Bundle-ClassPath: .,
  lib/commons-codec-1.6.jar,
  lib/commons-cli-2.0-SNAPSHOT.jar,
  lib/commons-digester-2.1.jar,
- lib/commons-math3-3.3.jar,
- lib/commons-lang3-3.3.2.jar
+ lib/commons-math3-3.3.jar
 Export-Package: org.apache.commons.cli2,
  org.apache.commons.cli2.builder,
  org.apache.commons.cli2.commandline,
@@ -36,23 +35,12 @@ Export-Package: org.apache.commons.cli2,
  org.apache.commons.digester.plugins.strategies,
  org.apache.commons.digester.substitution,
  org.apache.commons.digester.xmlrules,
- org.apache.commons.lang3;version="3.3.2",
- org.apache.commons.lang3.builder;version="3.3.2",
- org.apache.commons.lang3.concurrent;version="3.3.2",
- org.apache.commons.lang3.event;version="3.3.2",
- org.apache.commons.lang3.exception;version="3.3.2",
- org.apache.commons.lang3.math;version="3.3.2",
- org.apache.commons.lang3.mutable;version="3.3.2",
- org.apache.commons.lang3.reflect;version="3.3.2",
- org.apache.commons.lang3.text;version="3.3.2",
- org.apache.commons.lang3.text.translate;version="3.3.2",
- org.apache.commons.lang3.time;version="3.3.2",
- org.apache.commons.lang3.tuple;version="3.3.2",
  org.apache.commons.math3.distribution;version="3.3.0",
  org.apache.commons.math3.random;version="3.3.0",
  org.apache.commons.math3.stat.descriptive;version="3.3.0",
  org.apache.commons.math3.stat.descriptive.rank;version="3.3.0"
 Require-Bundle: org.apache.commons.beanutils;visibility:=reexport,
- org.apache.commons.logging;bundle-version="1.2.0";visibility:=reexport
+ org.apache.commons.logging;bundle-version="1.2.0";visibility:=reexport,
+ org.apache.commons.lang3;bundle-version="3.4.0";visibility:=reexport
 Bundle-ActivationPolicy: lazy
 Eclipse-BundleShape: dir

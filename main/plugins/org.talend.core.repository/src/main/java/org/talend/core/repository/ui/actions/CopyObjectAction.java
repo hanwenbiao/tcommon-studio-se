@@ -391,14 +391,7 @@ public class CopyObjectAction {
                     .getDefault().getService(ITestContainerProviderService.class);
             if (testContainerService != null) {
                 testContainerService.copyDataFiles(newItem, sourceNode.getId());
-                for (IRepositoryNode testNode : sourceNode.getChildren()) {
-                    Item testItem = testNode.getObject().getProperty().getItem();
-                    if (!(testItem instanceof ProcessItem)) {
-                        continue;
-                    }
-                    // testContainerService.copyTestCase(testItem, path, null, false);
-                    testContainerService.copyTestCase(newItem, testItem, path, null, false);
-                }
+                testContainerService.copyTestCase(newItem, sourceNode.getObject().getProperty().getItem(), path, null, false);
             }
         }
     }

@@ -6,7 +6,6 @@ import static org.talend.daikon.properties.presentation.Widget.*;
 import org.apache.avro.SchemaBuilder;
 import org.talend.components.api.properties.ComponentProperties;
 import org.talend.daikon.properties.Property;
-import org.talend.daikon.properties.Property.Type;
 import org.talend.daikon.properties.presentation.Form;
 import org.talend.daikon.properties.presentation.Widget.WidgetType;
 
@@ -28,7 +27,7 @@ public class SchemaProperties extends ComponentProperties {
     //
     // Properties
     //
-    public Property schema = newProperty(Type.SCHEMA, "schema"); //$NON-NLS-1$
+    public Property schema = newSchema("schema"); //$NON-NLS-1$
 
     @Override
     public void setupProperties() {

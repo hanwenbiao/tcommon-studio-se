@@ -12,9 +12,12 @@
 // ============================================================================
 package org.talend.metadata.managment.ui.wizard.context;
 
+import java.util.List;
+
 import org.talend.commons.runtime.model.components.IComponentConstants;
 import org.talend.core.model.metadata.builder.connection.Connection;
 import org.talend.core.model.utils.ContextParameterUtils;
+import org.talend.core.runtime.util.GenericTypeUtils;
 import org.talend.daikon.properties.Property;
 import org.talend.daikon.properties.PropertyValueEvaluator;
 import org.talend.designer.core.model.utils.emf.talendfile.ContextType;
@@ -40,8 +43,25 @@ public class MetadataContextPropertyValueEvaluator implements PropertyValueEvalu
         }
         if (connection != null && connection.isContextMode() && isPropertySupportContext && storedValue != null) {
             ContextType contextType = ConnectionContextHelper.getContextTypeForContextMode(null, connection, true);
-            if (contextType != null) {
-                return ContextParameterUtils.getOriginalValue(contextType, String.valueOf(storedValue));
+            String valueFromContext = ContextParameterUtils.getOriginalValue(contextType, String.valueOf(storedValue));
+            if (GenericTypeUtils.isBooleanType(property)) {
+                return new Boolean(valueFromContext);
+            }
+            if (GenericTypeUtils.isIntegerType(property) && !valueFromContext.isEmpty()) {
+                return Integer.valueOf(valueFromContext);
+            }
+            if (GenericTypeUtils.isEnumType(property)) {
+                List<?> propertyPossibleValues = ((Property<?>) property).getPossibleValues();
+                if (propertyPossibleValues != null) {
+                    for (Object possibleValue : propertyPossibleValues) {
+                        if (possibleValue.toString().equals(valueFromContext)) {
+                            return possibleValue;
+                        }
+                    }
+                }
+            }
+            if (contextType != null) {                
+                return valueFromContext;
             }
         }
         return storedValue;

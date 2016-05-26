@@ -98,13 +98,6 @@ public interface IGenericWizardService extends IService {
             boolean isCompactView);
 
     /**
-     * Update component schema for metadata table of repository.
-     * 
-     * @param metadataTable
-     */
-    public void updateComponentSchema(MetadataTable metadataTable);
-
-    /**
      * Update component schema for node metadata table of node.
      * 
      * @param componentProperties

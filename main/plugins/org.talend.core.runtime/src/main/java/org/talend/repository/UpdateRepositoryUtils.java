@@ -391,7 +391,17 @@ public final class UpdateRepositoryUtils {
 
         final Connection connection = item.getConnection();
         if (connection != null) {
-            final EList tables = MetadataToolHelper.getMetadataTableFromConnection(connection, name);
+            List<MetadataTable> tables = null;
+            IGenericWizardService wizardService = null;
+            if (GlobalServiceRegister.getDefault().isServiceRegistered(IGenericWizardService.class)) {
+                wizardService = (IGenericWizardService) GlobalServiceRegister.getDefault()
+                        .getService(IGenericWizardService.class);
+            }
+            if (wizardService != null && wizardService.isGenericItem(item)) {
+                tables = wizardService.getMetadataTables(connection);
+            } else {
+                tables = MetadataToolHelper.getMetadataTableFromConnection(connection, name);
+            }
             // for bug 12543
             String tableLable = name;
             if (item instanceof SAPConnectionItem && name.split("/").length == 3) {
@@ -400,7 +410,7 @@ public final class UpdateRepositoryUtils {
             if (tables != null && tables.size() > 0) {
                 Object tableObject = tables.get(0);
                 if (tableObject instanceof MetadataTable) {
-                    for (MetadataTable table : (List<MetadataTable>) tables) {
+                    for (MetadataTable table : tables) {
                         if (table.getLabel().equals(tableLable)) {
                             if (GlobalServiceRegister.getDefault().isServiceRegistered(IMetadataManagmentService.class)) {
                                 IMetadataManagmentService mmService = (IMetadataManagmentService) GlobalServiceRegister

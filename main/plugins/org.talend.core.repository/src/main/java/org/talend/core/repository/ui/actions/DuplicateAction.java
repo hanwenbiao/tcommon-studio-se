@@ -344,23 +344,7 @@ public class DuplicateAction extends AContextualAction {
                     .getDefault().getService(ITestContainerProviderService.class);
             if (testContainerService != null) {
                 testContainerService.copyDataFiles(newItem, sourceNode.getId());
-                for (IRepositoryNode testNode : this.sourceNode.getChildren()) {
-                    Item testItem = testNode.getObject().getProperty().getItem();
-                    if (!(testItem instanceof ProcessItem)) {
-                        continue;
-                    }
-                    String initNameValue = "Copy_of_" + testItem.getProperty().getDisplayName(); //$NON-NLS-1$
-                    String jobNameValue = null;
-                    final TreeSelection selectionInClipboard = (TreeSelection) selection;
-                    ERepositoryObjectType type = ((RepositoryNode) selectionInClipboard.toArray()[0]).getObject()
-                            .getRepositoryObjectType();
-                    try {
-                        jobNameValue = getDuplicateName((RepositoryNode) testNode, initNameValue, type, selectionInClipboard);
-                    } catch (BusinessException e) {
-                        jobNameValue = ""; //$NON-NLS-1$
-                    }
-                    testContainerService.copyTestCase(newItem, testItem, path, jobNameValue, true);
-                }
+                testContainerService.copyTestCase(newItem, sourceNode.getObject().getProperty().getItem(), path, null, true);
             }
         }
 

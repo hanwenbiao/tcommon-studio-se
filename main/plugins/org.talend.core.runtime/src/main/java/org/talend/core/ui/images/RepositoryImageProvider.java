@@ -129,13 +129,16 @@ public class RepositoryImageProvider {
             return ECoreImage.TDQ_JRAXML_ICON;
         } else if (type == ERepositoryObjectType.TDQ_RULES_MATCHER) {
             return ECoreImage.TDQ_MATCH_RULE_ICON;
-        } else if (type == ERepositoryObjectType.TDQ_RULES_SQL || type == ERepositoryObjectType.TDQ_RULES_PARSER) {
+        } else if (type == ERepositoryObjectType.TDQ_RULES_SQL || type == ERepositoryObjectType.TDQ_RULES_PARSER
+                || type == ERepositoryObjectType.TDQ_RULES) {
             return ECoreImage.TDQ_RULE_ICON;
-        } else if (type == ERepositoryObjectType.TDQ_PATTERN_REGEX || type == ERepositoryObjectType.TDQ_PATTERN_SQL) {
+        } else if (type == ERepositoryObjectType.TDQ_PATTERN_REGEX || type == ERepositoryObjectType.TDQ_PATTERN_SQL
+                || type == ERepositoryObjectType.TDQ_PATTERN_ELEMENT) {
             return ECoreImage.TDQ_PATTERN_ICON;
         } else if (type == ERepositoryObjectType.TDQ_SOURCE_FILE_ELEMENT) {
             return ECoreImage.TDQ_SOURCE_FILE_ICON;
         } else if (type == ERepositoryObjectType.TDQ_SYSTEM_INDICATORS || type == ERepositoryObjectType.TDQ_USERDEFINE_INDICATORS
+                || type == ERepositoryObjectType.TDQ_INDICATOR_ELEMENT
                 || type == ERepositoryObjectType.TDQ_USERDEFINE_INDICATORS_LIB
                 || type == ERepositoryObjectType.SYSTEM_INDICATORS_ADVANCED_STATISTICS
                 || type == ERepositoryObjectType.SYSTEM_INDICATORS_BUSINESS_RULES
