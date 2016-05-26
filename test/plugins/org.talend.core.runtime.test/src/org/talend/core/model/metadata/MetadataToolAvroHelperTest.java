@@ -12,7 +12,7 @@
 // ============================================================================
 package org.talend.core.model.metadata;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
@@ -91,7 +91,7 @@ public class MetadataToolAvroHelperTest {
 
         assertThat(s.getType(), is(Schema.Type.RECORD));
         assertThat(s.getName(), is("testTable"));
-        assertThat(s.getFields(), hasSize(3));
+        assertThat(s.getFields().size(), is(3));
         // assertThat(s.getObjectProps().keySet(),
         // contains(Talend6SchemaConstants.TALEND6_LABEL, Talend6SchemaConstants.TALEND6_COMMENT));
         assertThat(s.getProp(Talend6SchemaConstants.TALEND6_LABEL), is("testTable"));
