@@ -72,8 +72,7 @@ public class ImportExportHandlersManager {
     private IImportResourcesHandler[] resImportHandlers;
 
     public ImportExportHandlersManager() {
-        registryReader = new ImportExportHandlersRegistryReader();
-        registryReader.init();
+        registryReader = ImportExportHandlersRegistryReader.getInstance();
     }
 
     public IImportItemsHandler[] getImportHandlers() {

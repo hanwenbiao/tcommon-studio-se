@@ -79,6 +79,7 @@ import org.talend.commons.utils.workbench.extensions.ExtensionPointLimiterImpl;
 import org.talend.commons.utils.workbench.extensions.IExtensionPointLimiter;
 import org.talend.core.CorePlugin;
 import org.talend.core.GlobalServiceRegister;
+import org.talend.core.ITDQItemService;
 import org.talend.core.ITDQRepositoryService;
 import org.talend.core.PluginChecker;
 import org.talend.core.context.Context;
@@ -464,6 +465,17 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
                         TalendPaletteHelper.checkAndInitToolBar();
                     }
                 } else if (IBrandingConfiguration.PERSPECTIVE_DQ_ID.equals(pId)) {
+                    // TDQ-11980: when change perspective to DQ, createDQStructor if needed espescially when it is the
+                    // first time for the new created git branch
+                    if (GlobalServiceRegister.getDefault().isServiceRegistered(ITDQItemService.class)) {
+                        ITDQItemService tdqItemService = (ITDQItemService) GlobalServiceRegister.getDefault().getService(
+                                ITDQItemService.class);
+                        if (tdqItemService != null) {
+                            tdqItemService.createDQStructor();
+                        }
+                    }
+                    // TDQ-11980~
+
                     if (GlobalServiceRegister.getDefault().isServiceRegistered(ITDQRepositoryService.class)) {
                         ITDQRepositoryService tdqRepositoryService = (ITDQRepositoryService) GlobalServiceRegister.getDefault()
                                 .getService(ITDQRepositoryService.class);

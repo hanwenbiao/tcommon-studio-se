@@ -51,6 +51,8 @@ public class CheatSheetUtils {
 
     private boolean maxCheatSheetHasSHow = false;
 
+    private final String CHEAT_SHEET_IS_OPENED_KEY = "CHEAT_SHEET_IS_OPENED"; //$NON-NLS-1$
+
     /**
      * Sets the isFirstTime.
      * 
@@ -76,8 +78,42 @@ public class CheatSheetUtils {
     public static CheatSheetUtils getInstance() {
         if (instance == null) {
             instance = new CheatSheetUtils();
+
         }
         return instance;
+    }
+
+    private CheatSheetUtils() {
+        // add part listener to record cheatsheet status when initialize this class.
+        addCheatSheetPartListener();
+    }
+
+    private void addCheatSheetPartListener() {
+        final IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+        if (activePage != null) {
+            IPartListener2 partListenerCheatSheet = new PartListener2Adapter() {
+
+                @Override
+                public void partClosed(IWorkbenchPartReference partRef) {
+                    IWorkbenchPart part = partRef.getPart(false);
+                    if (part != null && part instanceof org.eclipse.ui.internal.cheatsheets.views.CheatSheetView
+                            && activePage.getPerspective().getId().equals(DQ_PERSPECTIVE_ID)) {
+                        PrefUtil.getAPIPreferenceStore().setValue(CHEAT_SHEET_IS_OPENED_KEY, false);
+                    }
+                }
+
+                @Override
+                public void partOpened(IWorkbenchPartReference partRef) {
+                    IWorkbenchPart part = partRef.getPart(false);
+                    if (part != null && part instanceof org.eclipse.ui.internal.cheatsheets.views.CheatSheetView
+                            && activePage.getPerspective().getId().equals(DQ_PERSPECTIVE_ID)) {
+                        PrefUtil.getAPIPreferenceStore().setValue(CHEAT_SHEET_IS_OPENED_KEY, true);
+                    }
+                }
+
+            };
+            activePage.addPartListener(partListenerCheatSheet);
+        }
     }
 
     /**
@@ -211,6 +247,16 @@ public class CheatSheetUtils {
      */
     public void setMaxCheatSheetHasSHow(boolean maxCheatSheetHasSHow) {
         this.maxCheatSheetHasSHow = maxCheatSheetHasSHow;
+    }
+
+    /**
+     * 
+     * judge if this cheat sheet view is closed.
+     * 
+     * @return
+     */
+    public boolean isOpenedCheatSheet() {
+        return PrefUtil.getAPIPreferenceStore().getBoolean(CHEAT_SHEET_IS_OPENED_KEY);
     }
 
 }

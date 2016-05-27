@@ -12,8 +12,6 @@
 // ============================================================================
 package org.talend.commons.ui.utils;
 
-import java.util.HashMap;
-
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IPerspectiveDescriptor;
 import org.eclipse.ui.IWorkbenchPage;
@@ -27,10 +25,6 @@ import org.eclipse.ui.internal.cheatsheets.views.ViewUtilities;
  * DOC yyi class global comment. Detailled comment
  */
 public class CheatSheetPerspectiveAdapter extends PerspectiveAdapter {
-
-    protected String cheetSheetID;
-
-    public HashMap<String, Boolean> cheetSheetInPerspective = new HashMap<String, Boolean>();
 
     /**
      * CheatSheetPerspectiveAdapter constructor.
@@ -47,13 +41,6 @@ public class CheatSheetPerspectiveAdapter extends PerspectiveAdapter {
      */
     @Override
     public void perspectivePreDeactivate(IWorkbenchPage page, IPerspectiveDescriptor perspective) {
-        CheatSheetView cheetSheet = CheatSheetUtils.getInstance().findCheetSheet("org.talend.datacleansing.core.ui.dqcheatsheet");
-        if (null != cheetSheet) {
-            cheetSheetID = cheetSheet.getCheatSheetID();
-            // Always hide cheatsheet first on switching perspective
-            CheatSheetUtils.getInstance().hideCheetSheet(cheetSheet);
-        }
-        cheetSheetInPerspective.put(perspective.getId(), null != cheetSheet);
         super.perspectivePreDeactivate(page, perspective);
     }
 
@@ -65,14 +52,19 @@ public class CheatSheetPerspectiveAdapter extends PerspectiveAdapter {
      */
     @Override
     public void perspectiveActivated(IWorkbenchPage page, IPerspectiveDescriptor perspective) {
-        if (null != cheetSheetInPerspective.get(perspective.getId()) && cheetSheetInPerspective.get(perspective.getId())) {
+        // 1.if it is not DQ perspective, hide cheat sheet view.
+        // 2.if it is DQ perspective and the last statu of cheet sheet view is opened, restore cheat sheet.
+        if (!perspective.getId().equals(CheatSheetUtils.DQ_PERSPECTIVE_ID)) {
+            CheatSheetView cheetSheet = CheatSheetUtils.getInstance().findCheetSheet(
+                    "org.talend.datacleansing.core.ui.dqcheatsheet"); //$NON-NLS-1$
+            if (null != cheetSheet) {
+                // Always hide cheatsheet first on switching perspective
+                CheatSheetUtils.getInstance().hideCheetSheet(cheetSheet);
+            }
+        } else if (CheatSheetUtils.getInstance().isOpenedCheatSheet()) {
             restoreCheetSheet();
         }
-        // MOD yyi 2011-04-08 19088: Close the cheat sheet view when the user is not in Data Profiler
-        // perspective
-        if (CheatSheetUtils.getInstance().isFirstTime() && perspective.getId().equals(CheatSheetUtils.DQ_PERSPECTIVE_ID)) {
-            restoreCheetSheet();
-        }
+
         super.perspectiveActivated(page, perspective);
     }
 
@@ -92,7 +84,7 @@ public class CheatSheetPerspectiveAdapter extends PerspectiveAdapter {
                 // Therefore DQ_CHEATSHEET_START_ID will be used to fill CheatSheetView.
                 IWorkbenchPart activePart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
                 if (null != view) {
-                    view.setInput("org.talend.datacleansing.core.ui.dqcheatsheet");
+                    view.setInput("org.talend.datacleansing.core.ui.dqcheatsheet");//$NON-NLS-1$
                     if (CheatSheetUtils.getInstance().isFirstTime()) {
                         CheatSheetUtils.getInstance().maxDisplayCheatSheetView(view);
                     }

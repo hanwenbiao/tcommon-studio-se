@@ -43,11 +43,29 @@ public class ImportExportHandlersRegistryReader extends RegistryReader {
 
     private IImportResourcesHandler[] importResourcesHandlers = null;
 
-    public ImportExportHandlersRegistryReader() {
+    private static ImportExportHandlersRegistryReader instance;
+
+    public static ImportExportHandlersRegistryReader getInstance() {
+        if (instance == null) {
+            instance = new ImportExportHandlersRegistryReader();
+            instance.init();
+        }
+        return instance;
+    }
+
+    private ImportExportHandlersRegistryReader() {
         super("org.talend.repository.items.importexport", "handler"); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
+    private void clearCache() {
+        imortRegistries.clear();
+        resImportResistries.clear();
+        importItemsHandlers = null;
+        importResourcesHandlers = null;
+    }
+
     public void init() {
+        clearCache();
         readRegistry();
 
         // check for override
