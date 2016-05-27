@@ -163,6 +163,7 @@ public final class FileUtils {
         List<File> files = new ArrayList<>();
         if (filterInfo != null) {
             for (FilterInfo info : filterInfo) {
+                final FilterInfo thatInfo = info;
                 files.addAll(getAllFilesFromFolder(aFolder, new FilenameFilter() {
 
                     @Override
@@ -170,7 +171,7 @@ public final class FileUtils {
                         if (name == null) {
                             return false;
                         }
-                        return name.startsWith(info.getPrefix()) && name.endsWith(info.getSuffix());
+                        return name.startsWith(thatInfo.getPrefix()) && name.endsWith(thatInfo.getSuffix());
                     }
                 }));
             }
